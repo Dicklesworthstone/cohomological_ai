@@ -1,0 +1,412 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+
+\title{Cohomology AI}
+\author{O1-Pro and Claude 3.5 Sonnet (Collaboration facillitated by Jeffrey Emanuel)}
+\date{December 2024}
+
+\begin{document}
+
+\maketitle
+
+\section{Preliminary Framework and Notation}
+
+\subsection{Introduction to the Setting}
+Consider a category $\mathbf{Net}$ whose objects are neural network parameter configurations, and whose morphisms $\varphi: \Theta \to \Theta'$ represent “updates” of parameters under an optimization algorithm (e.g., ADAM). We assume $\Theta$ is a large vector space over $\mathbb{R}$ or $\mathbb{C}$, typically of dimension on the order of $10^{9}$ or more.
+
+\subsection{Cohomological Perspective on Parameter Space}
+We hypothesize that for each layer $L_i$ of the network, one can associate a sheaf $\mathcal{F}_i$ on a topological base space $X_i$. The space $X_i$ might be viewed as the “activation manifold” (all possible activation patterns at layer $i$) or the set of relevant contexts/tasks the network is trained on.
+
+\subsection{Data, Activations, and Sheaves}
+Let $\mathbf{Data}$ be a set (or measure space) of input tokens/prompts. A forward pass from $\mathbf{x}\in \mathbf{Data}$ through the network defines local sections of $\mathcal{F}_i$. Each local section might represent the collection of weights, biases, and attention maps relevant to that portion of the input domain.
+
+\subsection{Long Exact Sequences and Transformer Layers}
+Each Transformer block can be viewed as a composition of operations (multi-head attention, feedforward, layer norm) grouped into an “update functor” $U_i$. We consider short exact sequences
+\[
+0 \;\longrightarrow\; \mathcal{F}_{i} \;\longrightarrow\; \mathcal{G}_{i} \;\longrightarrow\; \mathcal{H}_{i} \;\longrightarrow\; 0,
+\]
+whose induced long exact sequence in cohomology
+\[
+0 \;\to\; H^{0}(\mathcal{F}_i) \;\to\; H^{0}(\mathcal{G}_i) \;\to\; H^{0}(\mathcal{H}_i) \;\to\; H^{1}(\mathcal{F}_i) \;\to\; \cdots
+\]
+is posited to mirror how local syntactic patterns become higher-level features (semantic or logical constructs).
+
+\subsection{Proposed Exactness Criteria for Sub-Circuits}
+We define a sub-circuit $\mathcal{C}\subseteq \Theta$ to be “exact” if it satisfies the analog of exactness conditions for sheaves. Concretely, let $\mathcal{C}_{i}\subseteq \Theta$ be the parameters relevant to layer $i$. For each short exact sequence at layer $i$,
+\[
+(\mathcal{C} \cap \mathcal{F}_i) = \ker\Bigl(\mathcal{C}\cap \mathcal{G}_i \;\to\; \mathcal{C}\cap \mathcal{H}_i\Bigr),
+\]
+and so forth in the usual exactness pattern.
+
+\subsection{Intuitive Interpretation}
+Exactness implies that if something is preserved at a lower level, it appears at a higher level; if something new appears at a higher level, it comes from a difference at the lower level. This aligns with how sub-networks preserve or transform key syntactic/semantic features.
+
+\subsection{Lemma (Existence of Minimally Exact Sub-circuits)}
+\textbf{Lemma 1.}  
+Given a well-trained transformer $T$ and a finite set of test prompts $S$, define 
+\[
+\mathcal{C}^* = \bigcap_{\alpha \in S} \{\theta \in \Theta : \text{zeroing out }\theta\text{ does not degrade performance on prompt }\alpha\}.
+\]
+Under mild assumptions (like linear approximate activation neighborhoods), $\mathcal{C}^*$ contains a minimal sub-circuit $\widetilde{\mathcal{C}}\subseteq \Theta$ that is exact in each short exact sequence bridging layers. A standard Zorn’s Lemma argument in the partially ordered set of sub-circuits shows a maximal element remains exact for $S$.
+
+\subsection{Conjecture (Uniqueness Up to Isomorphism of Key Circuits)}
+\textbf{Conjecture 1.}  
+For a large transformer $T$ trained in a sufficiently modular fashion, any sub-circuit $\widetilde{\mathcal{C}}$ capturing a distinct cognitive function (e.g.\ basic logic) is unique up to isomorphism induced by symmetries of the parameter space (such as attention head permutations).
+
+\section{Training Dynamics and Optimization}
+
+\subsection{Sheaf Morphisms as Parameter Updates}
+Each iteration of ADAM can be viewed as a sheaf morphism in $\mathbf{Net}$. Define a functor $F : \mathbf{Net} \to \mathbf{Net}$ where $F(\Theta)$ is the parameter configuration after one gradient step. Exactness means certain sub-circuits remain consistent across updates.
+
+\subsection{Proposition (Local Consistency Under ADAM)}
+\textbf{Proposition 2.}  
+Let $\Theta_{n}$ be the parameters after $n$ steps. For each short exact sequence 
+\[
+0 \to \mathcal{F}_i \to \mathcal{G}_i \to \mathcal{H}_i \to 0,
+\]
+assume it is exact at step $n$. Then at step $n+1$, it remains “nearly exact” because ADAM updates are typically small and do not break sub-circuits that are already supporting correct function.
+
+\subsection{“Damage” to Sub-circuits}
+We define “damage” to an exact sub-circuit as the introduction of homology where there was once an acyclic chain complex. Concretely, if a new nonzero element appears in $H^1(\mathcal{C}\cap \mathcal{F}_i)$, that indicates a break in exactness.
+
+\subsection{Proposed Quantitative Measure of Structural Stability}
+Define $\Delta(\mathcal{C}, \Theta)$ as a sum of norms of homology groups along all relevant short exact sequences:
+\[
+\Delta(\mathcal{C}, \Theta) = \sum_{i} \bigl\|\widetilde{H}^i(\mathcal{C}, \Theta)\bigr\|.
+\]
+This yields a scalar we can track over training steps.
+
+\subsection{Lemma (Monotonic Improvement of $\Delta$ Under Gentle Training)}
+\textbf{Lemma 3.}  
+If ADAM hyperparameters are small, $\Delta(\mathcal{C}, \Theta_{n+1}) \le \Delta(\mathcal{C}, \Theta_{n}) + O(\eta^2)$, where $\eta$ is the learning rate. Small updates cannot introduce large cycles/boundaries if the chain complex was stable.
+
+\subsection{Corollary (Circuit Preservation During Late-Stage Training)}
+\textbf{Corollary 4.}  
+Once a sub-circuit $\mathcal{C}$ becomes exact, subsequent small-scale gradient steps do not break it. Empirically, once a network “locks in” a sub-circuit that supports a function like modus ponens, it typically remains unless subjected to large or adversarial updates.
+
+\subsection{Conjectured Relationship to Model Capacity}
+We suspect the large dimension of parameter space (and the ability to preserve multiple disjoint exact sub-circuits) partly explains the superior performance of big models.
+
+\subsection{Conjecture (Scaling and Overlapping Sub-circuits)}
+\textbf{Conjecture 2.}  
+In a model with $N$ parameters, the maximal number of stable, disjoint sub-circuits grows superlinearly in $N$, possibly $\Omega(N^\alpha)$ for some $\alpha>1/2$.
+
+\section{Local-to-Global Spectral Sequence Interpretation}
+
+\subsection{Overview of the Spectral Sequence Mechanism}
+The Local-to-Global Spectral Sequence (LGSS) states that under certain conditions, \v{C}ech cohomology on an open cover converges to the derived-functor cohomology of the sheaf,
+\[
+E_2^{p,q}(\mathcal{U}, \mathcal{F}) \;\Longrightarrow\; H^{p+q}(\mathcal{F}).
+\]
+Translating to neural networks: each local “patch” of parameter space or input domain contributes local learned features. These unify globally into a consistent structure.
+
+\subsection{Neural Patch Covers}
+Define $\mathcal{U} = \{U_\alpha\}$ where each $U_\alpha \subset \mathbf{Data}$ is a sub-domain (mathematics prompts, everyday reasoning, etc.). The sheaf $\mathcal{F}$ is the assignment of “parameter subsets + partial forward passes” to each domain. If local cohomology is small, no large-scale “holes” appear in the global model.
+
+\subsection{Theorem (LGSS for Transformers)}
+\textbf{Theorem 5. (Hypothetical)}  
+Let a large transformer $T$ be trained in a curriculum covering $\mathbf{Data}$ via $\{U_\alpha\}$. If for each $\alpha$, the restricted sub-network $T|_{U_\alpha}$ has trivial higher cohomology (no $H^k$ for $k>0$), then globally $T$ converges to a state with no large-scale contradictions (the spectral sequence collapses).
+
+\subsection{Practical Implication}
+A suggested strategy is to ensure each domain of tasks is well-learned in isolation, so each local complex is acyclic. “Bridge tasks” then unify these local solutions into one globally consistent solution.
+
+\subsection{Lemma (Intersection Training as a \v{C}ech Boundary Condition)}
+\textbf{Lemma 6.}  
+If tasks $A$ and $B$ each induce stable sub-circuits, training on $A\cup B$ is necessary to ensure they don’t produce contradictory solutions on $A\cap B$. The “co-boundary” operator in \v{C}ech cohomology must vanish for consistency.
+
+\section{Counterintuitive Training Methods Motivated by Exactness}
+
+\subsection{“Cohomological Pruning”}
+Instead of magnitude-based pruning, define a sub-circuit $\mathcal{C}\subseteq \Theta$. Only prune parameters in $\Theta\setminus \mathcal{C}$, preserving exactness for $\mathcal{C}$.
+
+\subsection{Theorem (Existence of Safe Pruning)}
+\textbf{Theorem 7.}  
+If $\mathcal{C}$ is an exact sub-circuit capturing performance on a test set $S$, then there is a $(\delta,\varepsilon)$-pruning of $\Theta\setminus \mathcal{C}$ that removes at least $|\Theta| - |\mathcal{C}| - \delta$ parameters while performance on $S$ drops by at most $\varepsilon$.
+
+\subsection{“Cohomological Distillation”}
+Distillation preserves much of a big model’s function in a smaller model. From a sheaf viewpoint, one primarily needs to replicate exact sub-circuits; the rest is auxiliary capacity.
+
+\subsection{Conjecture (Distillation by Exact Sub-circuits Yields Minimal Models)}
+\textbf{Conjecture 3.}  
+If a large model $T$ has found stable, exact sub-circuits $\{\mathcal{C}_1,\dots,\mathcal{C}_m\}$, then building a smaller $T'$ replicating precisely these sub-circuits is near-optimal in preserving $T$’s performance, up to some overhead.
+
+\section{Experimental Protocols: Identifying Sub-Circuits}
+
+\subsection{Hypothetical “Activation Tracing” Algorithm}
+To locate an exact sub-circuit $\mathcal{C}$ for tasks $\{t_j\}$:
+\begin{enumerate}
+\item Run the network on each $t_j$, record activations at each layer.
+\item Perform iterative parameter ablation/masking to see which parameters are critical for $\{t_j\}$.
+\item Keep only those parameters essential for all $t_j$.
+\item If the resulting sub-circuit is exact (in short exact sequences across layers), $\mathcal{C}$ is found.
+\end{enumerate}
+
+\subsection{Lemma (Guaranteed Convergence of Activation Tracing)}
+\textbf{Lemma 8.}  
+If an exact sub-circuit $\mathcal{C}^*$ exists, iterative ablation that preserves performance on $\{t_j\}$ and discards superfluous parameters converges to some $\widehat{\mathcal{C}} \subseteq \mathcal{C}^*$.
+
+\subsection{Caveat—Parameter Overlap and Redundancy}
+Large models may have many overlapping sub-circuits $\{\mathcal{C}_1,\dots,\mathcal{C}_k\}$. An ablation pass might find $\bigcup_i \mathcal{C}_i$ at first. Further fine-grained tests isolate individual sub-circuits.
+
+\subsection{Hypothesis—Universal “Bridge” Circuits}
+We suspect there are “bridge” parameters shared across most sub-circuits, corresponding to widely reused transformations (like basic syntactic parsing).
+
+\section{Designing Future Architectures}
+
+\subsection{The “Cohomological Transformer” Blueprint}
+A potential design might partition the model into blocks labeled $H^0, H^1, H^2, \dots$, enforcing data flow between $H^k$ and $H^{k+1}$ only through short exact sequences. A spectral-sequence-like procedure then trains $H^0$ thoroughly before allowing $H^1$ to form stable circuits, etc.
+
+\subsection{Lemma (Reduced Interference Through Layered Exactness)}
+\textbf{Lemma 9.}  
+If each “level” is an exact sheaf extension of the level below, gradient updates refining $H^k$ do not break $H^{k-1}$.
+
+\subsection{Corollary (Easier Interpretability)}
+Because the architecture is enforced to be stratified, sub-circuits become more localized to $(k,k+1)$ transitions, aiding interpretability.
+
+\subsection{Open Problem—Whether This Enforced Structure Reduces Expressivity}
+Layer-by-layer exactness might hamper more free-form internal representations, so a partial enforcement could be preferable.
+
+\subsection{Architectural Variation—Cohomological Attention Mechanisms}
+An attention head that preserves exactness might factor its weight matrices through chain complexes. In symbols, each attention operation could be a morphism $\mathrm{Att}_h: H^k(\mathcal{F}) \to H^k(\mathcal{F})$ that is chain-homotopic to the identity (or something similar).
+
+\subsection{Hypothesis—Skip Connections as Partial Chain Maps}
+Residual/skip connections resemble identity morphisms in chain complexes, carrying features forward unchanged and preserving exactness.
+
+\section{Further Directions and Possible Extensions}
+
+\subsection{Interpreting Catastrophic Forgetting as a Cohomological Breakdown}
+When a model unlearns tasks upon new training, it introduces homology into what was an exact sub-circuit.
+
+\subsection{Proposition (Forgetting = Nontrivial Cycles Appear)}
+\textbf{Proposition 10.}  
+If $\mathcal{C}$ was an exact sub-circuit supporting tasks $S$, catastrophic forgetting means a new cycle appears in $H^1(\mathcal{C}, \Theta)$.
+
+\subsection{Proposed “Circuit Protection” Implementation}
+Define a “protection mask” for $\mathcal{C}$ that lowers the learning rate for parameters in $\mathcal{C}$. Track whether $\Delta(\mathcal{C}, \Theta)$ remains near zero; if it spikes, revert changes.
+
+\subsection{Adjoint Functor Perspective}
+Teacher–student distillation can be seen as an adjoint situation where the student’s smaller parameter space factors through sub-circuits of the teacher.
+
+\subsection{Lemma (Existence of Right Adjoint if Exactness is Preserved)}
+\textbf{Lemma 11.}  
+If $\Theta'$ can be factored through every sub-circuit in $\Theta$ via an exact subfunctor, then the distillation map $\Theta \to \Theta'$ is a right adjoint in the category of neural configurations.
+
+\subsection{Potential Relevance to Random Matrix Theory}
+Large random matrices in attention blocks may spontaneously yield near-exact complexes once constraints are met, connecting to known advantages of big parameter counts.
+
+\subsection{Potential Relevance to Non-commutative Geometry}
+If attention heads are non-commutative, the parameter manifold may be a non-commutative space. Sheaf theory in such settings is an ongoing academic area.
+
+\subsection{Proposed Preliminary Experiments}
+\begin{enumerate}
+\item Identify a single sub-circuit supporting a logical inference task; check if ablating outside it preserves performance.
+\item Implement “circuit-protecting” training and compare final performance/stability vs.\ a baseline.
+\item Build a small “cohomological transformer” with layered exactness constraints and measure interpretability.
+\end{enumerate}
+
+\subsection{Hypothesis—Empirical Gains in Efficiency}
+We suspect circuit-protection and local-to-global training reduce the required training steps by 10--30\%.
+
+\subsection{Large-Scale Feasibility Questions}
+Scanning a 70B-parameter model is challenging; approximate methods (gradient-based saliency, partial ablation) are likely needed.
+
+\subsection{Connection to Symbolic AI Efforts}
+Symbolic logic engines can be seen as trivially exact. We could embed such engines as “holes” in the network that remain protected.
+
+\subsection{Sheaf Theory vs.\ More Classical Approaches}
+Many interpretability methods (feature visualization, canonical correlation analysis) do not impose the structural constraints that come from sheaf exactness.
+
+\subsection{Long Exact Sequences as an Explanation for Multi-Task Synergies}
+When tasks are cohomologically complementary, they share sub-circuits, creating synergy in multi-task learning.
+
+\subsection{Surprising “Leap” Capabilities from Preserved Exactness}
+Whenever a new capability reuses an existing sub-circuit, performance can jump on other tasks reliant on that same sub-circuit.
+
+\subsection{Potential Link to Skip-Connection Patterns in Empirical Networks}
+Skip/gating layers that cause catastrophic failures if ablated might be “cohomological bridges.”
+
+\subsection{Relevance to Curriculum Learning}
+The cohomological viewpoint clarifies that each curriculum patch must remain consistent with previously learned patches or risk introducing cycles.
+
+\subsection{Diagram Chasing in Neural Activation Flow}
+We can treat forward passes for different tasks as commutative diagrams. Diagram chasing might detect a mismatch in parameters akin to standard homological algebra methods.
+
+\subsection{Category-Theoretic Language}
+Each layer can be viewed as a functor from a category of embeddings to a category of representations. Exactness requires that short exact sequences in embeddings map to short exact sequences in outputs.
+
+\subsection{Potential Galois Theory Interpretation}
+Symmetries in parameter space may form a group $G$, giving a Galois correspondence between certain sub-circuits and subgroups of $G$.
+
+\subsection{The Dream: Automatic Discovery of Foundational Circuits}
+If we can isolate sub-circuits for fundamental reasoning (modus ponens, grammar transformations), we could freeze or refine them for advanced tasks.
+
+\subsection{Objections and Possible Flaws}
+\begin{itemize}
+\item Actual networks might not be strictly sheaf-exact.
+\item Parameter redundancy is huge.
+\item Activation noise can disrupt ideal structures.
+\end{itemize}
+
+\subsection{Partial Rebuttal}
+Approximate large-scale exactness could still emerge, and it would remain stable under small gradient updates.
+
+\subsection{Conjectured Role of Overparameterization}
+A network lacking sufficient capacity might be forced to “violate” exact sequences. Overparameterization ensures enough slack to keep them intact.
+
+\subsection{Link to Sharp vs.\ Flat Minima}
+Exact sub-circuits correlate with flatter minima, as other parameters can shift without harming critical circuits.
+
+\subsection{Proposed Analytical Tools}
+\begin{itemize}
+\item Graph-based correlation analysis of attention heads.
+\item Differential geometry of local curvature near sub-circuits.
+\item Spectral analysis of weight matrices for signs of exactness.
+\end{itemize}
+
+\subsection{Potential Implementation of “Circuit Masking”}
+Let $\mathbf{Mask}(\mathcal{C})$ zero out gradient updates for parameters in $\mathcal{C}$:
+\[
+\Theta_{n+1} = \Theta_n - \eta \bigl(I - \mathbf{Mask}(\mathcal{C})\bigr)\,\nabla L(\Theta_n).
+\]
+This prevents changes to the sub-circuit.
+
+\subsection{Theorem (Stability Guarantee for Circuit Masking)}
+\textbf{Theorem 12.}  
+If $\mathcal{C}$ was exact at $\Theta_n$, it remains exact at $\Theta_{n+1}$, since those parameters do not update.
+
+\subsection{Discussion—Need for Periodic Re-Mapping}
+The rest of the network drifts during training, so we must occasionally verify that $\mathcal{C}$ still performs as intended.
+
+\subsection{Potential Gains in Convergence Speed}
+Freeing non-circuit parameters to move quickly while preserving $\mathcal{C}$ may accelerate convergence on new tasks.
+
+\subsection{“Exactness-Preserving Optimizer”}
+Define $\Omega(\Theta, \nabla L) = \Theta - \eta\,\Pi_{\mathrm{exact}}(\nabla L)$, where $\Pi_{\mathrm{exact}}$ is a projection ensuring sub-circuit exactness remains intact.
+
+\subsection{Approximate Implementation}
+We typically lack a closed form for $\Pi_{\mathrm{exact}}$. One must rely on ablation or activation-tracing heuristics.
+
+\subsection{Theorem (Lower Bound on Complexity of Finding $\Pi_{\mathrm{exact}}$)}
+\textbf{Theorem 13.}  
+Finding the minimal sub-circuit for a given property is NP-hard in the worst case (e.g.\ by reduction from subset-sum).
+
+\subsection{Conclusion—Heuristic but Powerful}
+Hence these methods remain heuristic but could be highly effective in practice.
+
+\subsection{Spectral Sequence Approach to Distillation}
+A hierarchical approach: identify “lowest-level” sub-circuits (near $\mathbf{H}^0$), then find those bridging to $\mathbf{H}^1$, and so forth. This mimics the pages $E_r^{p,q}$ of a spectral sequence, unifying partial structures at each stage.
+
+\subsection{Potential Gains vs.\ Standard Distillation}
+A layered approach might yield smaller final models than trying to replicate all behavior at once.
+
+\subsection{Proposed “Exactness Loss Terms” in Training}
+Add a penalty $\alpha \cdot \Delta(\mathcal{C}, \Theta)$ to the cross-entropy loss so that if a known sub-circuit is near exact, the network is discouraged from breaking it.
+
+\subsection{Lemma (Gradient Flow Under Extra Penalty)}
+\[
+\frac{d}{dn}\,\Delta(\mathcal{C}, \Theta_n) \approx -\alpha \|\nabla \Delta\|^2,
+\]
+implying the penalty fosters monotonic improvement in sub-circuit exactness.
+
+\subsection{Complexity of the Additional Term}
+Computing $\nabla \Delta(\mathcal{C}, \Theta)$ is hard. Approximate or numerical methods might suffice.
+
+\subsection{Bridging to Empirical TDA (Topological Data Analysis)}
+One might apply persistent homology or barcodes on activation spaces to find emergent “holes” that degrade performance.
+
+\subsection{Relevance to Actual Deployed LLMs}
+Huge language models may show emergent cohomological structures. Detecting them in practice is a major challenge.
+
+\subsection{Example: Grammar-Parsing Circuit}
+A sub-circuit $\mathcal{C}_{\mathrm{grammar}}$ might connect token-level embeddings ($\mathbf{H}^0$) to lexical semantics ($\mathbf{H}^1$). Exactness enforces consistent morphological transformations.
+
+\subsection{Example: Modus Ponens Sub-circuit}
+Similarly, $\mathcal{C}_{\mathrm{logic}}$ might unify certain heads that track premises and feed them into a conclusion representation.
+
+\subsection{Overlapping Circuits and “Support Structures”}
+Sub-circuits often overlap in feed-forward layers or skip connections, complicating exactness definitions.
+
+\subsection{Proposition (Additivity of Overlapping Circuits Fails)}
+\textbf{Proposition 14.}  
+If $\mathcal{C}_1$ and $\mathcal{C}_2$ are exact individually, $\mathcal{C}_1 \cup \mathcal{C}_2$ need not be exact unless the overlap is also exact.
+
+\subsection{Practical Impact of This Result}
+Simply combining individually discovered sub-circuits may fail unless their intersection is exact.
+
+\subsection{Necessity of Intersection Testing}
+We must verify exactness on overlaps. One might define a “merge” procedure that checks $\mathcal{C}_1\cap \mathcal{C}_2$ carefully.
+
+\subsection{Emergent “Exactness Lattice”}
+A partial order of sub-circuits arises by inclusion; minimal “atoms” might correspond to irreducible logic rules or morphological transformations.
+
+\subsection{Possibly Thousands or Millions of Atoms}
+Large models likely have a vast combinatorial array of sub-circuits.
+
+\subsection{Engineering Heuristics}
+\begin{itemize}
+\item Start with broad tasks, identify large sub-circuits.
+\item Drill down on specialized tasks, isolating smaller sub-circuits.
+\item Build a lattice structure of bridging parameters.
+\end{itemize}
+
+\subsection{Potential Gains in Robustness}
+A network with many well-defined small sub-circuits may degrade gracefully under random ablations.
+
+\subsection{Hypothesis—Why Overfitting Is Limited in Larger Models}
+A tangle of cohomological constraints among sub-circuits acts as a hidden regularization, explaining why giant models do not always overfit.
+
+\subsection{Unresolved Complexity—Dynamic Sub-circuit Evolution}
+Sub-circuits may merge or refine across training stages, so a single set might not remain stable throughout.
+
+\subsection{Infinity-Categorical Generalization}
+One could treat parameter updates as morphisms in an $\infty$-category, capturing higher homotopies (very speculative).
+
+\subsection{Slogan—Large NNs as Emergent Derived Categories}
+In derived algebraic geometry, we have derived categories of cochain complexes. Possibly large NNs form “algorithmic derived categories.”
+
+\subsection{Potential Collaboration with Algebraic Geometry Community}
+Mathematicians could formalize these heuristics, bridging homological algebra and deep learning in a rigorous subfield.
+
+\subsection{Pragmatic Takeaway—High Risk, High Reward}
+Even a partial success in systematically leveraging exact sub-circuits could boost interpretability, robustness, and compression.
+
+\subsection{Proposed Next Steps}
+\begin{enumerate}
+\item Implement sub-circuit mapping in a medium-scale model (e.g.\ 1B parameters).
+\item Check stability under continued training.
+\item Attempt partial “exactness-preserving distillation.”
+\end{enumerate}
+
+\subsection{Potential Obstacles}
+\begin{itemize}
+\item Modern LLMs are extremely large.
+\item Many arguments rely on linear approximations to parameter perturbations.
+\item Real chain complexes might be too messy in practice.
+\end{itemize}
+
+\subsection{Nonetheless, Theoretical Beauty}
+Neural networks plus sheaf cohomology echo how advanced geometry found applications in theoretical physics.
+
+\subsection{Encouragement for Deeper Inquiry}
+Pushing these ideas might reorder common AI practices under a more rigorous framework.
+
+\subsection{Final Word on Long Exact Sequences}
+They track “what is lost” or “what is gained” at each representational layer, akin to features vanishing/appearing during training.
+
+\subsection{Final Word on Local-to-Global Spectral Sequences}
+They illustrate how partial coverage of the data domain can unify into a globally consistent learned model.
+
+\subsection{Aspiration}
+We aim to build “cohomological transformers” that incorporate these constraints systematically, offering interpretability, multi-task stability, and efficient distillation.
+
+\subsection{A Plea for Mathematical Rigor}
+Bridging continuous parameter realms, modern hardware, and approximate computations is nontrivial but worth exploring.
+
+\subsection{Conclusion}
+Despite the speculative nature, exploring sheaf cohomology, exact sequences, and homological invariants in neural networks might yield a powerful unifying framework for interpretability, training stability, and compression strategies.
+
+\[
+\rule{0.8\textwidth}{0.6pt}
+\]
+
+\end{document}
